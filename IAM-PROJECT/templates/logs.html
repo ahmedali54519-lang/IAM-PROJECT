@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Logs and Reports | {{ project_name }}{% endblock %}
+
+{% block content %}
+<section class="app-shell">
+    <aside class="sidebar panel">
+        <div class="brand-block">
+            <span class="eyebrow">Audit Console</span>
+            <h2>Threat logs and reports</h2>
+            <p>Centralized visibility for suspicious access attempts, devices, IPs, and risk scores.</p>
+        </div>
+
+        <nav class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a class="active" href="{{ url_for('logs') }}">Logs and Reports</a>
+            <a href="{{ url_for('change_password') }}">Change Password</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </nav>
+    </aside>
+
+    <div class="dashboard-main">
+        <section class="panel">
+            <div class="dashboard-header">
+                <div class="dashboard-title">
+                    <span class="eyebrow">Admin Analytics</span>
+                    <h1>Authentication intelligence</h1>
+                    <p>Review platform-wide events and download the audit trail for compliance, monitoring, and reporting.</p>
+                </div>
+
+                <div class="button-row">
+                    <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">Back to dashboard</a>
+                    <a class="btn btn-primary" href="{{ url_for('export_logs') }}">Download CSV</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="summary-grid">
+            <article class="metric-card">
+                <span>Total Events</span>
+                <strong>{{ summary.total_events }}</strong>
+            </article>
+            <article class="metric-card">
+                <span>Successful Logins</span>
+                <strong>{{ summary.success_count }}</strong>
+            </article>
+            <article class="metric-card">
+                <span>Failed Logins</span>
+                <strong>{{ summary.failed_count }}</strong>
+            </article>
+            <article class="metric-card">
+                <span>High Risk Alerts</span>
+                <strong>{{ summary.high_risk_count }}</strong>
+            </article>
+        </section>
+
+        <section class="chart-panel">
+            <div class="section-title">
+                <h2>Authentication event chart</h2>
+                <span class="table-kicker">Operational overview of system activity</span>
+            </div>
+            <img src="data:image/png;base64,{{ chart }}" alt="Authentication event chart">
+        </section>
+
+        <section class="table-panel">
+            <div class="section-title">
+                <h2>Detailed log records</h2>
+                <span class="table-kicker">Export-ready audit trail</span>
+            </div>
+
+            {% if logs %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Status</th>
+                            <th>Risk</th>
+                            <th>IP Address</th>
+                            <th>Device</th>
+                            <th>Time</th>
+                            <th>Reasons</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for l in logs %}
+                            <tr>
+                                <td>{{ l.username }}</td>
+                                <td>
+                                    <span class="badge {% if l.status == 'success' %}success{% else %}failed{% endif %}">
+                                        {{ l.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% set risk_class = 'active' %}
+                                    {% if l.risk_level == 'Medium Risk' %}
+                                        {% set risk_class = 'medium' %}
+                                    {% elif l.risk_level == 'High Risk' %}
+                                        {% set risk_class = 'high' %}
+                                    {% endif %}
+                                    <span class="badge {{ risk_class }}">{{ l.risk_level }} ({{ l.risk_score }})</span>
+                                </td>
+                                <td>{{ l.ip_address or 'Unknown' }}</td>
+                                <td>{{ l.user_agent or 'Unknown device' }}</td>
+                                <td>{{ l.created_at|format_datetime }}</td>
+                                <td>{{ l.reasons or 'No anomaly reason stored' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-state">No logs found in the system.</div>
+            {% endif %}
+        </section>
+    </div>
+</section>
+{% endblock %}
