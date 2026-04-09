@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | {{ project_name }}{% endblock %}
+
+{% block content %}
+<section class="app-shell">
+    <aside class="sidebar panel">
+        <div class="brand-block">
+            <span class="eyebrow">SmartIAM</span>
+            <h2>Security Control Center</h2>
+            <p>Identity, role management, and suspicious-login analytics in one platform.</p>
+        </div>
+
+        <nav class="nav-links">
+            <a class="active" href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            {% if role == 'admin' %}
+                <a href="{{ url_for('logs') }}">Logs and Reports</a>
+            {% endif %}
+            <a href="{{ url_for('change_password') }}">Change Password</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </nav>
+    </aside>
+
+    <div class="dashboard-main">
+        <section class="panel">
+            <div class="dashboard-header">
+                <div class="dashboard-title">
+                    <span class="eyebrow">{{ role|title }} Panel</span>
+                    <h1>Welcome, {{ user.username }}</h1>
+                    <p>
+                        {% if role == 'admin' %}
+                            Monitor identities, risk alerts, and access health across the whole system.
+                        {% else %}
+                            Review your account posture, access activity, and security status in real time.
+                        {% endif %}
+                    </p>
+                </div>
+
+                <div>
+                    {% set risk_class = 'low' %}
+                    {% if ai_result.status == 'High Risk' %}
+                        {% set risk_class = 'high' %}
+                    {% elif ai_result.status == 'Medium Risk' %}
+                        {% set risk_class = 'medium' %}
+                    {% endif %}
+                    <span class="status-chip {{ risk_class }}">{{ ai_result.status }}</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="metrics-grid">
+            {% for item in dashboard_metrics.primary %}
+                <article class="metric-card">
+                    <span>{{ item.label }}</span>
+                    <strong>{{ item.value }}</strong>
+                </article>
+            {% endfor %}
+        </section>
+
+        <section class="content-grid">
+            <article class="panel">
+                <div class="section-title">
+                    <h2>Security posture</h2>
+                    <span class="table-kicker">Risk score: {{ ai_result.score }}</span>
+                </div>
+
+                {% if ai_result.reasons %}
+                    <ul class="reason-list">
+                        {% for reason in ai_result.reasons %}
+                            <li>{{ reason }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="empty-state">No active threat indicators were found for this account.</div>
+                {% endif %}
+            </article>
+
+            <article class="panel">
+                <div class="section-title">
+                    <h2>Recent alerts</h2>
+                    <span class="table-kicker">Latest suspicious events</span>
+                </div>
+
+                {% if dashboard_metrics.recent_alerts %}
+                    <div class="alert-list">
+                        {% for alert in dashboard_metrics.recent_alerts %}
+                            <div class="alert-item">
+                                <strong>{{ alert.username }} - {{ alert.risk_level }}</strong>
+                                <span class="muted">{{ alert.created_at|format_datetime }}</span>
+                                <p>{{ alert.reasons or 'Behavior flagged by the detection engine.' }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">No medium or high-risk alerts available right now.</div>
+                {% endif %}
+            </article>
+        </section>
+
+        <section class="table-panel">
+            <div class="section-title">
+                <h2>My recent activity</h2>
+                <span class="table-kicker">Last {{ recent_logs|length }} authentication events</span>
+            </div>
+
+            {% if recent_logs %}
+                <div class="activity-list">
+                    {% for log in recent_logs %}
+                        <div class="activity-item">
+                            <strong>{{ log.status|title }} login from {{ log.ip_address or 'Unknown IP' }}</strong>
+                            <span class="muted">{{ log.created_at|format_datetime }} | {{ log.user_agent or 'Unknown device' }}</span>
+                            <p>Risk: {{ log.risk_level }} ({{ log.risk_score }})</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">No login activity found for this account yet.</div>
+            {% endif %}
+        </section>
+
+        {% if users %}
+            <section class="table-panel">
+                <div class="section-title">
+                    <h2>User management</h2>
+                    <span class="table-kicker">Admin-only identity lifecycle controls</span>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Department</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Last Login</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                            <tr>
+                                <td>
+                                    <strong>{{ u.username }}</strong><br>
+                                    <span class="muted">{{ u.email or 'No email' }}</span>
+                                </td>
+                                <td>{{ u.department }}</td>
+                                <td><span class="badge {{ u.role }}">{{ u.role|title }}</span></td>
+                                <td>
+                                    {% if u.is_active %}
+                                        <span class="badge active">Active</span>
+                                    {% else %}
+                                        <span class="badge inactive">Suspended</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ u.last_login_at|format_datetime }}</td>
+                                <td>
+                                    {% if u.id == user.id %}
+                                        <span class="muted">Current session</span>
+                                    {% else %}
+                                        <div class="inline-actions">
+                                            <form class="inline-form" method="POST" action="{{ url_for('toggle_user_status', id=u.id) }}">
+                                                <button type="submit" class="btn {% if u.is_active %}btn-warning{% else %}btn-secondary{% endif %}">
+                                                    {% if u.is_active %}Suspend{% else %}Activate{% endif %}
+                                                </button>
+                                            </form>
+                                            <form class="inline-form" method="POST" action="{{ url_for('delete_user', id=u.id) }}">
+                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

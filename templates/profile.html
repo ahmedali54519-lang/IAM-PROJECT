@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Profile | {{ project_name }}{% endblock %}
+
+{% block content %}
+<section class="app-shell">
+    <aside class="sidebar panel">
+        <div class="brand-block">
+            <span class="eyebrow">Account Center</span>
+            <h2>{{ user.username }}</h2>
+            <p>Review your registered identity information and account lifecycle details.</p>
+        </div>
+
+        <nav class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a class="active" href="{{ url_for('profile') }}">Profile</a>
+            {% if user.role == 'admin' %}
+                <a href="{{ url_for('logs') }}">Logs and Reports</a>
+            {% endif %}
+            <a href="{{ url_for('change_password') }}">Change Password</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </nav>
+    </aside>
+
+    <div class="dashboard-main">
+        <section class="profile-panel">
+            <span class="eyebrow">Identity Details</span>
+            <h2>User profile</h2>
+            <p>Your profile data supports audit trails and account ownership verification.</p>
+
+            <div class="profile-grid">
+                <div class="info-card">
+                    <span>Username</span>
+                    <strong>{{ user.username }}</strong>
+                </div>
+                <div class="info-card">
+                    <span>Email</span>
+                    <strong>{{ user.email or 'Not provided' }}</strong>
+                </div>
+                <div class="info-card">
+                    <span>Role</span>
+                    <strong>{{ user.role|title }}</strong>
+                </div>
+                <div class="info-card">
+                    <span>Department</span>
+                    <strong>{{ user.department }}</strong>
+                </div>
+                <div class="info-card">
+                    <span>Account Status</span>
+                    <strong>{% if user.is_active %}Active{% else %}Suspended{% endif %}</strong>
+                </div>
+                <div class="info-card">
+                    <span>Created On</span>
+                    <strong>{{ user.created_at|format_datetime }}</strong>
+                </div>
+                <div class="info-card">
+                    <span>Last Login</span>
+                    <strong>{{ user.last_login_at|format_datetime }}</strong>
+                </div>
+                <div class="info-card">
+                    <span>Total Successful Logins</span>
+                    <strong>{{ user.login_count or 0 }}</strong>
+                </div>
+            </div>
+
+            <div class="button-row">
+                <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">Back to dashboard</a>
+                <a class="btn btn-primary" href="{{ url_for('change_password') }}">Change password</a>
+            </div>
+        </section>
+    </div>
+</section>
+{% endblock %}
