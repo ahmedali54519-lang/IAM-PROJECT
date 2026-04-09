@@ -1000,6 +1000,14 @@ def utc_now():
 def ensure_schema():
     db.create_all()
 
+    # The manual ALTER/BACKFILL statements below were written for the app's
+    # legacy local SQLite database. On a fresh PostgreSQL deployment (Render),
+    # SQLAlchemy already creates the full schema from the current models, so we
+    # can skip the SQLite-specific migration path and avoid dialect-specific
+    # startup failures.
+    if db.engine.dialect.name != "sqlite":
+        return
+
     inspector = inspect(db.engine)
     existing_tables = set(inspector.get_table_names())
 
