@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: smartiam-web
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    healthCheckPath: /healthz
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SESSION_COOKIE_SECURE
+        value: "1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: smartiam-db
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_CHATBOT_MODEL
+        value: gpt-5.4-mini
+
+databases:
+  - name: smartiam-db
+    plan: free
+    region: oregon

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Register | {{ project_name }}{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<section class="auth-shell">
+    <div class="hero-panel">
+        <span class="eyebrow">Identity Onboarding</span>
+        <h1>Create a secure identity for the SmartIAM platform.</h1>
+        <p>
+            Register users with roles and departments to support controlled access,
+            audit readiness, and lifecycle management across the platform.
+        </p>
+
+        <ul class="feature-list">
+            <li>
+                <div>
+                    <strong>Role-based accounts</strong>
+                    Admin accounts manage the platform, while standard users access their personal workspace.
+                </div>
+            </li>
+            <li>
+                <div>
+                    <strong>Department tagging</strong>
+                    Organize users by area such as CSE, IT, HR, Finance, or Operations.
+                </div>
+            </li>
+            <li>
+                <div>
+                    <strong>Security-aware registration</strong>
+                    Password length checks and duplicate account prevention are included.
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="auth-card">
+        <span class="eyebrow">New Account</span>
+        <h1>Register user</h1>
+        <p>Fill in the account details to join the platform.</p>
+
+        <form method="POST" class="form-grid">
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input id="username" type="text" name="username" placeholder="Choose a username" required>
+            </div>
+
+            <div class="input-group">
+                <label for="email">Email</label>
+                <input id="email" type="email" name="email" placeholder="name@example.com" required>
+            </div>
+
+            <div class="input-group">
+                <label for="department">Department</label>
+                <select id="department" name="department" required>
+                    <option value="">Select department</option>
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="Information Technology">Information Technology</option>
+                    <option value="Human Resources">Human Resources</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Operations">Operations</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="role">Role</label>
+                <select id="role" name="role" required>
+                    <option value="">Select role</option>
+                    <option value="admin">Admin</option>
+                    <option value="user">User</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input id="password" type="password" name="password" placeholder="Minimum 8 characters" required>
+            </div>
+
+            <div class="button-row">
+                <button type="submit" class="btn btn-primary">Register</button>
+                <a class="ghost-link" href="{{ url_for('login') }}">Back to login</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,531 @@
+{% extends "base.html" %}
+
+{% block title %}Login | {{ project_name }}{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<section class="auth-shell">
+    <div class="hero-panel">
+        <span class="eyebrow">SmartIAM Platform</span>
+        <h1>AI-driven identity and access management for modern campuses and enterprises.</h1>
+        <p>
+            SmartIAM combines secure authentication, role-based access control, audit logging, and
+            suspicious-login detection in one streamlined security platform.
+        </p>
+
+        <ul class="feature-list">
+            <li>
+                <div>
+                    <strong>Risk-based authentication</strong>
+                    Failed attempts, repeated IP activity, and off-hour access are scored automatically.
+                </div>
+            </li>
+            <li>
+                <div>
+                    <strong>Admin analytics dashboard</strong>
+                    Review user accounts, threat signals, and login records in one place.
+                </div>
+            </li>
+            <li>
+                <div>
+                    <strong>Audit and compliance support</strong>
+                    Export logs with timestamps, devices, IP addresses, and risk labels.
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="auth-card">
+        <span class="eyebrow">Secure Access</span>
+        <h1>Welcome back</h1>
+        <p>Login to continue to the security dashboard.</p>
+
+        <form method="POST" class="form-grid">
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input id="username" type="text" name="username" placeholder="Enter your username" required>
+            </div>
+
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input id="password" type="password" name="password" placeholder="Enter your password" required>
+            </div>
+
+            <div class="button-row">
+                <button type="submit" class="btn btn-primary">Login</button>
+                <a class="ghost-link" href="{{ url_for('register') }}">Create account</a>
+            </div>
+        </form>
+
+        <p class="helper-text">
+            New to SmartIAM? <a href="{{ url_for('register') }}">Register an admin or user account</a> to begin.
+        </p>
+    </div>
+</section>
+
+<div class="chatbot-dock">
+    <button
+        class="chatbot-launcher"
+        type="button"
+        aria-expanded="false"
+        aria-controls="smartiam-chatbot"
+        aria-label="Open SmartIAM assistant"
+    >
+        <span class="chatbot-launcher-bubble" aria-hidden="true">
+            <span class="chatbot-launcher-antenna"></span>
+            <span class="chatbot-launcher-head">
+                <span class="chatbot-launcher-eyes">
+                    <span></span>
+                    <span></span>
+                </span>
+                <span class="chatbot-launcher-smile"></span>
+            </span>
+        </span>
+    </button>
+
+    <aside class="chatbot-card" id="smartiam-chatbot" hidden>
+        <div class="chatbot-header">
+            <div class="chatbot-header-main">
+                <span class="chatbot-avatar" aria-hidden="true">AI</span>
+                <div class="chatbot-heading">
+                    <span class="chatbot-kicker">Smart Support</span>
+                    <h2>SmartIAM Assistant</h2>
+                    <p>Fast login help.</p>
+                </div>
+            </div>
+            <button class="chatbot-close" type="button" aria-label="Close chatbot">x</button>
+        </div>
+
+        <div class="chatbot-toolbar">
+            <span class="chatbot-badge">Quick help</span>
+            <div class="chatbot-topics">
+                <button type="button" class="chatbot-topic-pill" data-prompt="How do I log in?">Login</button>
+                <button type="button" class="chatbot-topic-pill" data-prompt="Why was my account locked?">Locks</button>
+                <button type="button" class="chatbot-topic-pill" data-prompt="What does High Risk mean?">Risk</button>
+            </div>
+        </div>
+
+        <div class="chatbot-messages" aria-live="polite"></div>
+
+        <div class="chatbot-status" hidden>
+            <span class="typing-dots" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+            </span>
+            <span>Assistant is typing...</span>
+        </div>
+
+        <div class="chatbot-suggestion-wrap">
+            <span class="chatbot-section-label">Quick replies</span>
+            <div class="chatbot-suggestions"></div>
+        </div>
+
+        <form class="chatbot-form">
+            <label class="sr-only" for="chatbot-input">Ask SmartIAM a question</label>
+            <div class="chatbot-input-shell">
+                <input
+                    id="chatbot-input"
+                    type="text"
+                    name="message"
+                    placeholder="Ask login or risk"
+                    autocomplete="off"
+                    required
+                >
+            </div>
+            <button type="submit" class="chatbot-send">Go</button>
+        </form>
+    </aside>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(() => {
+    const launcher = document.querySelector(".chatbot-launcher");
+    const panel = document.querySelector(".chatbot-card");
+    const closeButton = document.querySelector(".chatbot-close");
+    const form = document.querySelector(".chatbot-form");
+    const input = document.querySelector("#chatbot-input");
+    const usernameField = document.querySelector("#username");
+    const messages = document.querySelector(".chatbot-messages");
+    const suggestions = document.querySelector(".chatbot-suggestions");
+    const status = document.querySelector(".chatbot-status");
+    const topicButtons = document.querySelectorAll(".chatbot-topic-pill");
+    const submitButton = document.querySelector(".chatbot-send");
+
+    if (!launcher || !panel || !form || !input || !messages || !suggestions || !status || !submitButton) {
+        return;
+    }
+
+    const initialSuggestions = [
+        "How do I create an account?",
+        "Why was my account locked?",
+        "What can admins do?"
+    ];
+    const storageKey = "smartiam-chatbot-state";
+    const initialPayload = {
+        title: "Support ready",
+        category: "Welcome",
+        tone: "info",
+        reply: "Ask about login, lockouts, risk, or account setup.",
+        bullets: [
+            "Use the quick buttons for one-tap answers.",
+            "Fast SmartIAM help is available on this page."
+        ],
+        actions: [
+            "How do I log in?",
+            "How do I create an account?"
+        ],
+        suggestions: initialSuggestions
+    };
+    let isBooted = false;
+    const responseCache = new Map();
+    let conversationState = [];
+
+    const currentTime = () =>
+        new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+
+    const getUsernameHint = () => (usernameField?.value || "").trim();
+    const buildHistoryPayload = () =>
+        conversationState.slice(-6).map((entry) => ({
+            role: entry.role,
+            message: entry.message,
+            category: entry.category || ""
+        }));
+    const cacheKey = (value) => `${value.trim().toLowerCase()}::${getUsernameHint().toLowerCase()}`;
+
+    const saveConversation = () => {
+        try {
+            window.sessionStorage.setItem(storageKey, JSON.stringify(conversationState.slice(-12)));
+        } catch (error) {
+        }
+    };
+
+    const loadConversation = () => {
+        try {
+            const raw = window.sessionStorage.getItem(storageKey);
+            if (!raw) {
+                return [];
+            }
+
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            return [];
+        }
+    };
+
+    const scrollToBottom = () => {
+        messages.scrollTop = messages.scrollHeight;
+    };
+
+    const createMeta = (label) => {
+        const meta = document.createElement("span");
+        meta.className = "chatbot-meta";
+        meta.textContent = `${label} - ${currentTime()}`;
+        return meta;
+    };
+
+    const appendUserMessage = (text, persist = true) => {
+        const wrapper = document.createElement("article");
+        wrapper.className = "chatbot-message user";
+
+        const bubble = document.createElement("div");
+        bubble.className = "chatbot-bubble";
+        bubble.textContent = text;
+
+        wrapper.appendChild(bubble);
+        wrapper.appendChild(createMeta("You"));
+        messages.appendChild(wrapper);
+
+        if (persist) {
+            conversationState.push({
+                role: "user",
+                message: text
+            });
+            saveConversation();
+        }
+
+        scrollToBottom();
+    };
+
+    const buildActionButton = (label, className = "chatbot-action") => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = className;
+        button.textContent = label;
+        button.addEventListener("click", () => {
+            input.value = label;
+            form.requestSubmit();
+        });
+        return button;
+    };
+
+    const appendAssistantResponse = (payload, persist = true) => {
+        const wrapper = document.createElement("article");
+        wrapper.className = "chatbot-message assistant";
+
+        const bubble = document.createElement("div");
+        bubble.className = "chatbot-response-card";
+        bubble.dataset.tone = payload.tone || "info";
+
+        const head = document.createElement("div");
+        head.className = "chatbot-response-head";
+
+        const category = document.createElement("span");
+        category.className = "chatbot-topic-chip";
+        category.textContent = payload.category || "Assistant";
+
+        const title = document.createElement("strong");
+        title.className = "chatbot-response-title";
+        title.textContent = payload.title || "SmartIAM Assistant";
+
+        head.appendChild(category);
+        head.appendChild(title);
+        bubble.appendChild(head);
+
+        const text = document.createElement("p");
+        text.className = "chatbot-response-text";
+        text.textContent = payload.reply || "I am here to help with SmartIAM questions.";
+        bubble.appendChild(text);
+
+        if (Array.isArray(payload.highlights) && payload.highlights.length) {
+            const highlights = document.createElement("div");
+            highlights.className = "chatbot-response-highlights";
+
+            payload.highlights.forEach((item) => {
+                const chip = document.createElement("span");
+                chip.className = "chatbot-highlight";
+                chip.textContent = item;
+                highlights.appendChild(chip);
+            });
+
+            bubble.appendChild(highlights);
+        }
+
+        if (Array.isArray(payload.bullets) && payload.bullets.length) {
+            const list = document.createElement("ul");
+            list.className = "chatbot-response-list";
+
+            payload.bullets.forEach((item) => {
+                const listItem = document.createElement("li");
+                listItem.textContent = item;
+                list.appendChild(listItem);
+            });
+
+            bubble.appendChild(list);
+        }
+
+        if (Array.isArray(payload.actions) && payload.actions.length) {
+            const actions = document.createElement("div");
+            actions.className = "chatbot-actions";
+
+            payload.actions.forEach((label) => {
+                actions.appendChild(buildActionButton(label));
+            });
+
+            bubble.appendChild(actions);
+        }
+
+        if (payload.status && payload.status.value) {
+            const statusRow = document.createElement("div");
+            statusRow.className = "chatbot-response-status";
+            statusRow.dataset.tone = payload.status.tone || payload.tone || "info";
+
+            const label = document.createElement("span");
+            label.className = "chatbot-response-status-label";
+            label.textContent = payload.status.label || "Status";
+
+            const value = document.createElement("strong");
+            value.className = "chatbot-response-status-value";
+            value.textContent = payload.status.value;
+
+            statusRow.appendChild(label);
+            statusRow.appendChild(value);
+            bubble.appendChild(statusRow);
+        }
+
+        wrapper.appendChild(bubble);
+        wrapper.appendChild(createMeta("SmartIAM Assistant"));
+        messages.appendChild(wrapper);
+
+        if (persist) {
+            conversationState.push({
+                role: "assistant",
+                message: payload.reply || "",
+                category: payload.category || "",
+                payload
+            });
+            saveConversation();
+        }
+
+        scrollToBottom();
+    };
+
+    const setTyping = (visible) => {
+        status.hidden = !visible;
+        scrollToBottom();
+    };
+
+    const renderSuggestions = (items) => {
+        suggestions.innerHTML = "";
+
+        items.forEach((item) => {
+            suggestions.appendChild(buildActionButton(item, "chatbot-suggestion"));
+        });
+    };
+
+    const openPanel = () => {
+        panel.hidden = false;
+        launcher.setAttribute("aria-expanded", "true");
+        launcher.classList.add("active");
+
+        if (!isBooted) {
+            const restored = loadConversation();
+
+            if (restored.length) {
+                conversationState = [];
+                messages.innerHTML = "";
+
+                restored.forEach((entry) => {
+                    if (entry.role === "user") {
+                        appendUserMessage(entry.message, false);
+                        conversationState.push({
+                            role: "user",
+                            message: entry.message
+                        });
+                        return;
+                    }
+
+                    if (entry.role === "assistant" && entry.payload) {
+                        appendAssistantResponse(entry.payload, false);
+                        conversationState.push({
+                            role: "assistant",
+                            message: entry.message || entry.payload.reply || "",
+                            category: entry.category || entry.payload.category || "",
+                            payload: entry.payload
+                        });
+                    }
+                });
+
+                const lastAssistant = [...conversationState].reverse().find((item) => item.role === "assistant");
+                renderSuggestions(lastAssistant?.payload?.suggestions || initialPayload.suggestions);
+            } else {
+                appendAssistantResponse(initialPayload);
+                renderSuggestions(initialPayload.suggestions);
+            }
+
+            isBooted = true;
+        }
+
+        window.setTimeout(() => input.focus(), 50);
+    };
+
+    const closePanel = () => {
+        panel.hidden = true;
+        launcher.setAttribute("aria-expanded", "false");
+        launcher.classList.remove("active");
+    };
+
+    const getReply = async (message) => {
+        const key = cacheKey(message);
+
+        if (responseCache.has(key)) {
+            return responseCache.get(key);
+        }
+
+        const response = await fetch("{{ url_for('chatbot_respond') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message,
+                usernameHint: getUsernameHint(),
+                history: buildHistoryPayload()
+            })
+        });
+        const payload = await response.json();
+        responseCache.set(key, payload);
+        return payload;
+    };
+
+    const submitMessage = async (message) => {
+        appendUserMessage(message);
+        input.value = "";
+        input.disabled = true;
+        submitButton.disabled = true;
+        let typingTimer = window.setTimeout(() => setTyping(true), 40);
+
+        try {
+            const payload = await getReply(message);
+            window.clearTimeout(typingTimer);
+            setTyping(false);
+            appendAssistantResponse(payload);
+            renderSuggestions(payload.suggestions || initialSuggestions);
+        } catch (error) {
+            window.clearTimeout(typingTimer);
+            setTyping(false);
+            appendAssistantResponse({
+                title: "Assistant unavailable",
+                category: "Connection",
+                tone: "warning",
+                reply: "I could not reach the assistant right now. Please try again in a moment.",
+                bullets: [
+                    "The page is still working normally.",
+                    "You can retry the same question or use a quick topic."
+                ],
+                actions: ["How do I log in?", "How do I create an account?"]
+            });
+            renderSuggestions(initialSuggestions);
+        } finally {
+            input.disabled = false;
+            submitButton.disabled = false;
+            input.focus();
+        }
+    };
+
+    launcher.addEventListener("click", () => {
+        if (panel.hidden) {
+            openPanel();
+            return;
+        }
+
+        closePanel();
+    });
+
+    closeButton.addEventListener("click", closePanel);
+    topicButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            const message = button.dataset.prompt;
+            if (!message) {
+                return;
+            }
+
+            if (panel.hidden) {
+                openPanel();
+            }
+
+            input.value = message;
+            form.requestSubmit();
+        });
+    });
+
+    form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const message = input.value.trim();
+
+        if (!message) {
+            return;
+        }
+
+        submitMessage(message);
+    });
+})();
+</script>
+{% endblock %}
