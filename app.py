@@ -1005,25 +1005,25 @@ def ensure_schema():
 
     alterations = {
         "user": [
-            ("email", "ALTER TABLE user ADD COLUMN email VARCHAR(120)"),
-            ("department", "ALTER TABLE user ADD COLUMN department VARCHAR(120)"),
-            ("is_active", "ALTER TABLE user ADD COLUMN is_active BOOLEAN DEFAULT 1"),
-            ("failed_attempts", "ALTER TABLE user ADD COLUMN failed_attempts INTEGER DEFAULT 0"),
-            ("login_count", "ALTER TABLE user ADD COLUMN login_count INTEGER DEFAULT 0"),
-            ("created_at", "ALTER TABLE user ADD COLUMN created_at DATETIME"),
-            ("last_login_at", "ALTER TABLE user ADD COLUMN last_login_at DATETIME"),
-            ("locked_until", "ALTER TABLE user ADD COLUMN locked_until DATETIME"),
+            ('email', 'ALTER TABLE "user" ADD COLUMN email VARCHAR(120)'),
+            ('department', 'ALTER TABLE "user" ADD COLUMN department VARCHAR(120)'),
+            ('is_active', 'ALTER TABLE "user" ADD COLUMN is_active BOOLEAN DEFAULT 1'),
+            ('failed_attempts', 'ALTER TABLE "user" ADD COLUMN failed_attempts INTEGER DEFAULT 0'),
+            ('login_count', 'ALTER TABLE "user" ADD COLUMN login_count INTEGER DEFAULT 0'),
+            ('created_at', 'ALTER TABLE "user" ADD COLUMN created_at DATETIME'),
+            ('last_login_at', 'ALTER TABLE "user" ADD COLUMN last_login_at DATETIME'),
+            ('locked_until', 'ALTER TABLE "user" ADD COLUMN locked_until DATETIME'),
         ],
         "login_log": [
-            ("ip_address", "ALTER TABLE login_log ADD COLUMN ip_address VARCHAR(64)"),
-            ("user_agent", "ALTER TABLE login_log ADD COLUMN user_agent VARCHAR(255)"),
-            ("risk_score", "ALTER TABLE login_log ADD COLUMN risk_score INTEGER DEFAULT 0"),
+            ('ip_address', 'ALTER TABLE "login_log" ADD COLUMN ip_address VARCHAR(64)'),
+            ('user_agent', 'ALTER TABLE "login_log" ADD COLUMN user_agent VARCHAR(255)'),
+            ('risk_score', 'ALTER TABLE "login_log" ADD COLUMN risk_score INTEGER DEFAULT 0'),
             (
                 "risk_level",
-                "ALTER TABLE login_log ADD COLUMN risk_level VARCHAR(50) DEFAULT 'Low Risk'",
+                'ALTER TABLE "login_log" ADD COLUMN risk_level VARCHAR(50) DEFAULT \'Low Risk\'',
             ),
-            ("reasons", "ALTER TABLE login_log ADD COLUMN reasons TEXT"),
-            ("created_at", "ALTER TABLE login_log ADD COLUMN created_at DATETIME"),
+            ('reasons', 'ALTER TABLE "login_log" ADD COLUMN reasons TEXT'),
+            ('created_at', 'ALTER TABLE "login_log" ADD COLUMN created_at DATETIME'),
         ],
     }
 
@@ -1039,15 +1039,15 @@ def ensure_schema():
     db.session.commit()
 
     backfills = [
-        "UPDATE user SET department = 'General' WHERE department IS NULL OR TRIM(department) = ''",
-        "UPDATE user SET is_active = 1 WHERE is_active IS NULL",
-        "UPDATE user SET failed_attempts = 0 WHERE failed_attempts IS NULL",
-        "UPDATE user SET login_count = 0 WHERE login_count IS NULL",
-        "UPDATE user SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL",
-        "UPDATE login_log SET risk_score = 0 WHERE risk_score IS NULL",
-        "UPDATE login_log SET risk_level = 'Low Risk' WHERE risk_level IS NULL OR TRIM(risk_level) = ''",
-        "UPDATE login_log SET reasons = '' WHERE reasons IS NULL",
-        "UPDATE login_log SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL",
+        'UPDATE "user" SET department = \'General\' WHERE department IS NULL OR TRIM(department) = \'\'',
+        'UPDATE "user" SET is_active = 1 WHERE is_active IS NULL',
+        'UPDATE "user" SET failed_attempts = 0 WHERE failed_attempts IS NULL',
+        'UPDATE "user" SET login_count = 0 WHERE login_count IS NULL',
+        'UPDATE "user" SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL',
+        'UPDATE "login_log" SET risk_score = 0 WHERE risk_score IS NULL',
+        'UPDATE "login_log" SET risk_level = \'Low Risk\' WHERE risk_level IS NULL OR TRIM(risk_level) = \'\'',
+        'UPDATE "login_log" SET reasons = \'\' WHERE reasons IS NULL',
+        'UPDATE "login_log" SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL',
     ]
 
     for sql in backfills:
